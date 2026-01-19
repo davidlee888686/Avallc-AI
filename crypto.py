@@ -4,23 +4,20 @@ This module provides an example of how you might decrypt an encrypted
 model file using a symmetric key. Replace `KEY` with your own secure key.
 """
 
-fromfrom cryptography.fernet import Fernet  # type: ignore
-import os
+from cryptography.fernet import Fernet  # type: ignore
 
-# Determine the encryption key for decrypting model files.
-# In production, the key should be provided via an environment variable
-# so that the code does not contain secrets. If the environment variable
-# `AVA_ENCRYPTION_KEY` is set, it will be used. Otherwise, a static
-# placeholder key is used as a fallback. Replace this placeholder with
-# your own generated key or configure the environment variable.
+try:
+    # When used as part of the avallc_ai_project package
+    from .config import get_encryption_key  # type: ignore
+except ImportError:
+    # Fallback if the module is executed as a script without package context
+    from config import get_encryption_key  # type: ignore
 
-_env_key = os.environ.get("AVA_ENCRYPTION_KEY")
-if _env_key:
-    KEY: bytes = _env_key.encode()
-else:
-    # WARNING: using a static key is insecure. Generate your own key
-    # with `Fernet.generate_key()` and provide it via the environment.
-    KEY: bytes = b"YOUR_STATIC_KEY"
+# Retrieve the key once at import time. In a long‑running application
+# you might want to refresh this periodically if the environment or
+# .env file can change during runtime.
+KEY: bytes = get_encryption_key()
+
 
 def decrypt_model(path: str) -> bytes:
     """Decrypt and return the contents of an encrypted model file."""
